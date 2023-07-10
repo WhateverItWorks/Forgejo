@@ -1,0 +1,55 @@
+version: "3.7"
+
+networks:
+  forgejo:
+    external: false
+
+services:
+  server:
+    image: codeberg.org/forgejo/forgejo:1.19
+    container_name: forgejo
+    hostname: forgejo
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__database__DB_TYPE=postgres
+      - FORGEJO__database__HOST=db:5432
+      - FORGEJO__database__NAME=forgejo
+      - FORGEJO__database__USER=forgejo
+      - FORGEJO__database__PASSWD=changethis
+    restart: always
+    networks:
+      - forgejo
+    volumes:
+      - ./forgejo:/data
+      - ./etc/timezone:/etc/timezone:ro
+      - ./etc/localtime:/etc/localtime:ro
+    ports:
+      - "127.0.0.1:3018:3000"
+      - "127.0.0.1:222:22"
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres
+    hostname: postgres
+    image: postgres:15
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - POSTGRES_USER=forgejo
+      - POSTGRES_PASSWORD=changethis
+      - POSTGRES_DB=forgejo
+    networks:
+      - forgejo
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
